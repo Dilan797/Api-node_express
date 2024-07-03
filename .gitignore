@@ -1,0 +1,19 @@
+# .gitignore
+
+# Ignorar directorios del sistema
+*.log
+*.dat
+*.ini
+Desktop/
+Documents/
+Downloads/
+Music/
+Pictures/
+Videos/
+
+# Ignorar configuraciones y archivos locales
+node_modules/
+.vscode/
+.DS_Store
+.idea/
+*.lock
