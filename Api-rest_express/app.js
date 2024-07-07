@@ -4,11 +4,30 @@ const express = require('express');
 const crypto = require('crypto');
 //Importamos movies.json
 const movies = require('./movies.json');
-//Creamos nuestro xpress
+const { validateMovie, validatePartialMovie } = require('./schemas/movies');
 
-const app = express()
-app.use(express.json())//Llamamos el midelware
-app.disable('x-powered-by')//Desabilitar el header x-Powered-By: Express
+//Creamos nuestro xpress
+const app = express();
+app.use(express.json());//Llamamos el midelware
+app.disable('x-powered-by');//Desabilitar el header x-Powered-By: Express
+
+
+//Detectar el origin
+const ACCEPTED_ORIGINS = [
+    'http://localhost:8080',
+    'http://localhost:1234',
+    'http://movies.com',
+    'http://dilan.dev',
+]
+// Middleware para manejar CORS
+app.use((req, res, next) => {
+    const origin = req.header('origin');
+    if (ACCEPTED_ORIGINS.includes(origin) || !origin) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE');
+    next();
+});
 
 //se utiliza para definir una ruta que maneja solicitudes HTTP GET.
 //Una solicitud GET se utiliza típicamente para obtener datos del servidor. En este caso,
@@ -17,11 +36,14 @@ app.disable('x-powered-by')//Desabilitar el header x-Powered-By: Express
 //     res.json({message:'hola mundo'})
 // })
 
-
 //Todos los recursos que sean MOVIES se identifican con /movies
 
-
 app.get('/movies', (req,res) => {
+    // //Forma dinamica que al entrar se da el puerto exacto
+    // const origin = req.header('origin')
+    // if (ACCEPTED_ORIGINS.includes(origin) || !origin){
+    //     res.header('Access-Control-Allow-Origin', origin)
+    // }
     //Recuperar las peliculos por genero
     const {genre} = req.query
     if (genre) {
@@ -37,40 +59,94 @@ app.get('/movies', (req,res) => {
 app.get('/movies/:id', (req,res) => {
     const {id} = req.params
     //Recuperamos la pelicula
-    const movie = movies.find(movie => movie.id === id)
+    const movie = movies.find(movie => movie.id === id);
     //Si no existe la pelicula
-    if(movie) return res.json(movie)
+    if(movie) return res.json(movie);
     res.status(404).json({message: 'Movie not found'})
 })
 
 //Creamos un POST, usamos el mismo recurso 'movies'
 app.post('/movies' , (req,res) => {
+    //Validamos el reques.body
+    const result = validateMovie(req.body)
+    
+    if (!result.success){
+        return res.status(400).json({ error: JSON.parse(result.error.message)})
+    }
+
     //Traemos el cuerpo de la request
-    const{
-        title,
-        genre,
-        year,
-        director,
-        duration,
-        rate, 
-        poster
-    } = req.body;
+    // const{
+    //     title,
+    //     genre,
+    //     year,
+    //     director,
+    //     duration,
+    //     rate, 
+    //     poster
+    // } = req.body;
     //Creamos un nuevo objeto:
     const newMovie = {
-        id: crypto.randomUUID() ,//Creamos un UUID V4
-        title,
-        genre,
-        year,
-        director,
-        duration,
-        rate: rate ?? 0, //Si no existe rate, asignamos 0
-        poster
+        id: crypto.randomUUID(),//Creamos un UUID V4
+        ...result.data 
     }    
     //Mutamos
     movies.push(newMovie);
     //Indicamos como se ha creado el recurso
-    res.status(201).json(newMovie)
+    res.status(201).json(newMovie)//actualizar cache del cliente
 });
+//Creamos el delete
+app.delete('/movies/:id', (req,res) => {
+    // //Forma dinamica que al entrar se da el puerto exacto
+    // const origin = req.header('origin')
+    // if (ACCEPTED_ORIGINS.includes(origin) || !origin){
+    //     res.header('Access-Control-Allow-Origin', origin)
+    // }
+
+    const {id} = req.params
+    const movieIndex = movies.findIndex(movie => movie.id === id)
+
+
+    if(movieIndex === -1) {
+        return res.status(404).json({message: 'Movie not found'})
+    }
+    movies.splice(movieIndex, 1)
+
+    return res.json({ message: 'Movie deleted'})
+})
+
+
+//Creamos PATCH
+app.patch('/movies/:id', (req,res) =>{
+    const result = validatePartialMovie(req.body)
+    if (!result.success){
+        return res.status(400).json({error: JSON.parse(result.error.message)})
+    }
+    
+    const {id} = req.params//Recuperamos la id
+    const movieIndex = movies.findIndex(movie => movie.id === id);//Buscamos la pelicula
+
+    if (movieIndex === -1){
+        return res.status(404).json ({message: 'Movie not found'});//Si no encontramos la pelicula
+
+    }
+    const updateMovie = {
+        ...movies[movieIndex],
+        ...result.data
+    }
+    movies[movieIndex]= updateMovie
+    //Devolvemos el json de una pelicula actualizada 
+    return res.json(updateMovie)
+})
+
+app.options('/movies/:id', (req,res) => {
+    //Forma dinamica que al entrar se da el puerto exacto
+    const origin = req.header('origin')
+    if (ACCEPTED_ORIGINS.includes(origin) || !origin){
+        res.header('Access-Control-Allow-Origin', origin)
+    }
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
+    res.send(200)
+})
 
 
 const PORT = process.env.PORT ?? 1234;

@@ -10,7 +10,7 @@ GET http://localhost:1234/movies?genre=action
 ###Crear una pelicula con POST
 POST http://localhost:1234/movies
 Content-Type: application/json
-###Fin del encabezado, inicio del cuerpo
+
 {
     "id": "8fb17ae1-bdfe-45e5-a871-4772d7e526b8",
     "title": "The Social Network",
@@ -22,4 +22,13 @@ Content-Type: application/json
         "Biography",
         "Drama"
     ]    
+}
+
+###Actualizar una pelicula exepto el id
+###Se puede cambiar una proiedad
+PATCH http://localhost:1234/movies/dcdd0fad-a94c-4810-8acc-5f108d3b18c3
+Content-Type: application/json
+
+{
+    "year" : 1998 
 }
