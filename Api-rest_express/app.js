@@ -18,7 +18,7 @@ app.use(cors({
         //Lista para detectar el origin
         const ACCEPTED_ORIGINS = [
             'http://localhost:8080',
-            'http://localhost:1234',
+            'http://localhost:3000',
             'http://movies.com',
             'http://dilan.dev',
         ]
