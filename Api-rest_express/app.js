@@ -166,7 +166,7 @@ app.options('/movies/:id', (req,res) => {
 })
 
 
-const PORT = process.env.PORT ?? 1234;
+const PORT = process.env.PORT ?? 3000;
 
 //Escuchar en el puerto
 app.listen(PORT, () => {
