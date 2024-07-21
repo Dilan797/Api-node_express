@@ -4,21 +4,38 @@ const express = require('express');
 const crypto = require('crypto');
 //Importamos movies.json
 const movies = require('./movies.json');
+const cors = require('cors')//Insertamos cors
 const { validateMovie, validatePartialMovie } = require('./schemas/movies');
+const { callbackify } = require('util');
 
 //Creamos nuestro xpress
 const app = express();
 app.use(express.json());//Llamamos el midelware
+//Insertamos cors para aceptar la solicitud de borrado 
+//y conectado a la lista del origen
+app.use(cors({
+    origin:(origin, callback) => {
+        //Lista para detectar el origin
+        const ACCEPTED_ORIGINS = [
+            'http://localhost:8080',
+            'http://localhost:1234',
+            'http://movies.com',
+            'http://dilan.dev',
+        ]
+        //Si el origin esta en la lista de aceptados
+        if(ACCEPTED_ORIGINS.includes(origin)){
+            return callback(null, true)
+        }
+        //Si no esta en la lista de aceptados
+        if (!origin){
+            return callback(null, true)
+        }
+        return callback(new Error('Not allowed by CORS'))
+    }
+}));
 app.disable('x-powered-by');//Desabilitar el header x-Powered-By: Express
 
 
-//Detectar el origin
-const ACCEPTED_ORIGINS = [
-    'http://localhost:8080',
-    'http://localhost:1234',
-    'http://movies.com',
-    'http://dilan.dev',
-]
 // Middleware para manejar CORS
 app.use((req, res, next) => {
     const origin = req.header('origin');
@@ -137,7 +154,7 @@ app.patch('/movies/:id', (req,res) =>{
     //Devolvemos el json de una pelicula actualizada 
     return res.json(updateMovie)
 })
-
+//Sección logica para borrar mi elemento 
 app.options('/movies/:id', (req,res) => {
     //Forma dinamica que al entrar se da el puerto exacto
     const origin = req.header('origin')
