@@ -19,7 +19,7 @@
 
 
     <script type="module"> 
-        fetch('http://localhost:1234/movies')
+        fetch('http://localhost:1234/movies', { mode: 'cors' })
             .then (res =>res.json())
             .then(movies => {
                 const html = movies.map(movie =>{

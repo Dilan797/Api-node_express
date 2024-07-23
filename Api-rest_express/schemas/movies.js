@@ -1,5 +1,5 @@
 //Llamamos al zod validaciones de datos
-const z = require('zod');
+import z from 'zod';
 //Creamos un movie schema validation
 const movieSchema = z.object({
     title:z.string({
@@ -12,7 +12,8 @@ const movieSchema = z.object({
     //Ponemos un valor default en rate para crear un valor optional 
     //y cargue le validación POST
     rate: z.number().min().max(10).default(5),
-    poster: z.string().url({
+    poster: z.
+    string().url({
         message: 'Movie poster must be a valid URL'
     }),
     genre:z.array(
@@ -25,17 +26,12 @@ const movieSchema = z.object({
 
 })
 //Creamos una función 
-function validateMovie(input){
+export function validateMovie(input){
     return movieSchema.safeParse(input);
 }
 //Funcion para que todas las propiedades existentes sean opcionales
-function validatePartialMovie (input){
+export function validatePartialMovie (input){
     return movieSchema.partial().safeParse(input)  
 }
 
 
-//Objeto validado
-module.exports ={
-    validateMovie,
-    validatePartialMovie
-}

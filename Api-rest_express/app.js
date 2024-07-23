@@ -1,38 +1,19 @@
 //Creando una Api_rest
-const express = require('express');
-//Llamamos biblioteca que te permite crear id's de forma automatizada
-const crypto = require('crypto');
+import express, { json } from 'express';
+
 //Importamos movies.json
-const movies = require('./movies.json');
-const cors = require('cors')//Insertamos cors
-const { validateMovie, validatePartialMovie } = require('./schemas/movies');
-const { callbackify } = require('util');
+//import moviesRouter 
+
+import {moviesRouter} from './routes/movies.js';
+import { createServer } from 'http';
+//Ultimo arreglo para llamar a la API
+import corsModule from './middlewares/cors.js';
+const { corsMiddleware, ACCEPTED_ORIGINS } = corsModule;
 
 //Creamos nuestro xpress
 const app = express();
-app.use(express.json());//Llamamos el midelware
-//Insertamos cors para aceptar la solicitud de borrado 
-//y conectado a la lista del origen
-app.use(cors({
-    origin:(origin, callback) => {
-        //Lista para detectar el origin
-        const ACCEPTED_ORIGINS = [
-            'http://localhost:8080',
-            'http://localhost:3000',
-            'http://movies.com',
-            'http://dilan.dev',
-        ]
-        //Si el origin esta en la lista de aceptados
-        if(ACCEPTED_ORIGINS.includes(origin)){
-            return callback(null, true)
-        }
-        //Si no esta en la lista de aceptados
-        if (!origin){
-            return callback(null, true)
-        }
-        return callback(new Error('Not allowed by CORS'))
-    }
-}));
+app.use(json());//Llamamos el midelware
+app.use(corsMiddleware())
 app.disable('x-powered-by');//Desabilitar el header x-Powered-By: Express
 
 
@@ -54,107 +35,30 @@ app.use((req, res, next) => {
 // })
 
 //Todos los recursos que sean MOVIES se identifican con /movies
+//
+//
+//
+//
 
-app.get('/movies', (req,res) => {
-    // //Forma dinamica que al entrar se da el puerto exacto
-    // const origin = req.header('origin')
-    // if (ACCEPTED_ORIGINS.includes(origin) || !origin){
-    //     res.header('Access-Control-Allow-Origin', origin)
-    // }
-    //Recuperar las peliculos por genero
-    const {genre} = req.query
-    if (genre) {
-        const filteredMovies = movies.filter
-        //Para verificar si una película pertenece a un género específico
-        (movie => movie.genre.some(g => g.toLowerCase() === genre.toLowerCase()));
-        return res.json(filteredMovies)
-    }
-    res.json(movies)
-})
+//app.get('/movies', todo) 
+//
 //Para recuperar una pelicula, segmento dinamico
 //parametro de la url para acceder a una id
-app.get('/movies/:id', (req,res) => {
-    const {id} = req.params
-    //Recuperamos la pelicula
-    const movie = movies.find(movie => movie.id === id);
-    //Si no existe la pelicula
-    if(movie) return res.json(movie);
-    res.status(404).json({message: 'Movie not found'})
-})
-
+//app.get('/movies/:id', todo)
+//
 //Creamos un POST, usamos el mismo recurso 'movies'
-app.post('/movies' , (req,res) => {
-    //Validamos el reques.body
-    const result = validateMovie(req.body)
-    
-    if (!result.success){
-        return res.status(400).json({ error: JSON.parse(result.error.message)})
-    }
-
-    //Traemos el cuerpo de la request
-    // const{
-    //     title,
-    //     genre,
-    //     year,
-    //     director,
-    //     duration,
-    //     rate, 
-    //     poster
-    // } = req.body;
-    //Creamos un nuevo objeto:
-    const newMovie = {
-        id: crypto.randomUUID(),//Creamos un UUID V4
-        ...result.data 
-    }    
-    //Mutamos
-    movies.push(newMovie);
-    //Indicamos como se ha creado el recurso
-    res.status(201).json(newMovie)//actualizar cache del cliente
-});
+//app.post('/movies', todo )
+//
 //Creamos el delete
-app.delete('/movies/:id', (req,res) => {
-    // //Forma dinamica que al entrar se da el puerto exacto
-    // const origin = req.header('origin')
-    // if (ACCEPTED_ORIGINS.includes(origin) || !origin){
-    //     res.header('Access-Control-Allow-Origin', origin)
-    // }
-
-    const {id} = req.params
-    const movieIndex = movies.findIndex(movie => movie.id === id)
-
-
-    if(movieIndex === -1) {
-        return res.status(404).json({message: 'Movie not found'})
-    }
-    movies.splice(movieIndex, 1)
-
-    return res.json({ message: 'Movie deleted'})
-})
-
-
+//app.delete('/movies/:id', todo)
 //Creamos PATCH
-app.patch('/movies/:id', (req,res) =>{
-    const result = validatePartialMovie(req.body)
-    if (!result.success){
-        return res.status(400).json({error: JSON.parse(result.error.message)})
-    }
-    
-    const {id} = req.params//Recuperamos la id
-    const movieIndex = movies.findIndex(movie => movie.id === id);//Buscamos la pelicula
+//app.patch('/movies/:id', todo)
+//Hacemos una imoportacion de nuestro código anteriro en esta linea
+//de el archivo moviesRoute.js 
+app.use('/movies', moviesRouter);
 
-    if (movieIndex === -1){
-        return res.status(404).json ({message: 'Movie not found'});//Si no encontramos la pelicula
 
-    }
-    const updateMovie = {
-        ...movies[movieIndex],
-        ...result.data
-    }
-    movies[movieIndex]= updateMovie
-    //Devolvemos el json de una pelicula actualizada 
-    return res.json(updateMovie)
-})
-//Sección logica para borrar mi elemento 
+//Código para completar la solucitud de borrado de una pelicula 
 app.options('/movies/:id', (req,res) => {
     //Forma dinamica que al entrar se da el puerto exacto
     const origin = req.header('origin')
@@ -162,13 +66,38 @@ app.options('/movies/:id', (req,res) => {
         res.header('Access-Control-Allow-Origin', origin)
     }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
-    res.send(200)
+    res.sendStatus(200)
 })
 
+function findAvailablePort(startPort) {
+    return new Promise((resolve, reject) => {
+        const server = createServer();
+        server.listen(startPort, () => {
+            const address = server.address();
+            const port = address && typeof address === 'object' ? address.port : null;
+            server.close(() => {
+                resolve(port);
+            });
+        });
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                findAvailablePort(startPort + 1).then(resolve, reject);
+            } else {
+                reject(err);
+            }
+        });
+    });
+}
 
-const PORT = process.env.PORT ?? 3000;
+const startServer = async () => {
+    try {
+        const port = await findAvailablePort(1234);
+        app.listen(port, () => {
+            console.log(`Servidor escuchando en el puerto ${port}`);
+        });
+    } catch (error) {
+        console.error('No se pudo iniciar el servidor:', error);
+    }
+};
 
-//Escuchar en el puerto
-app.listen(PORT, () => {
-    console.log(`Escuchando en el puerto ${PORT}`)
-});
+startServer();
