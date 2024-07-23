@@ -1,18 +1,18 @@
 //Creando una Api_rest
-import express, { json } from 'express';
+import express from 'express';
 
 //Importamos movies.json
 //import moviesRouter 
 
 import {moviesRouter} from './routes/movies.js';
 import { createServer } from 'http';
-//Ultimo arreglo para llamar a la API
+//Ultimo arreglo para llamar
 import corsModule from './middlewares/cors.js';
 const { corsMiddleware, ACCEPTED_ORIGINS } = corsModule;
 
 //Creamos nuestro xpress
 const app = express();
-app.use(json());//Llamamos el midelware
+app.use(express.json()); 
 app.use(corsMiddleware())
 app.disable('x-powered-by');//Desabilitar el header x-Powered-By: Express
 

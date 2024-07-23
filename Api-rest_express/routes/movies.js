@@ -12,7 +12,7 @@ moviesRouter.get('/:id', MovieController.getById );
 //Insertamos post-> controllador 'create'
 moviesRouter.post('/', MovieController.create);
 //Insertamos delete-> controllador 'delete'
-moviesRouter.delete('/:id', MovieController.delete );
+moviesRouter.delete('/:id',MovieController.delete );
 //Insertamos patch-> controllador 'update'
-moviesRouter.patch('/: id', MovieController.update);
+moviesRouter.patch('/:id',MovieController.update);
 
